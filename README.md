@@ -5,11 +5,22 @@
 此程式用於在區域網路中同步播放多部影片，可以在不同主機上同步播放影片。
 ## 安裝方式
 1. 安裝mplayer
+```
+sudo apt install mplayer
+```
+
+
 2. 安裝pyqt5
+```
+pip install - r requirements.txt
+```
 
 ## 使用方法
 
 1. python3 main.py 運行程式後，將會看到兩個分頁：Master 和 Slave。
+```
+python3 main.py
+```
 
 2. Master 分頁：
 
