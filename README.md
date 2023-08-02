@@ -17,6 +17,8 @@ pip install - r requirements.txt
 
 ## 使用方法
 
+循環播放在選擇影片前勾選
+
 1. python3 main.py 運行程式後，將會看到兩個分頁：Master 和 Slave。
 ```
 python3 main.py

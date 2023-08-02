@@ -2,7 +2,8 @@ import sys
 import socket
 import subprocess
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton, QTabWidget,
-                             QInputDialog, QLineEdit, QFileDialog, QLabel, QCheckBox)
+                             QInputDialog, QLineEdit, QFileDialog, QLabel, QCheckBox, QTextBrowser)
+from PyQt5.QtCore import QUrl
 import netifaces
 
 
@@ -25,17 +26,21 @@ class MyApp(QWidget):
         self.tabs = QTabWidget()
         self.tabMaster = QWidget()
         self.tabSlave = QWidget()
+        self.tabInstruction = QWidget()
 
-        self.tabs.addTab(self.tabMaster,"Master")
-        self.tabs.addTab(self.tabSlave,"Slave")
+        self.tabs.addTab(self.tabMaster, "Master")
+        self.tabs.addTab(self.tabSlave, "Slave")
+        self.tabs.addTab(self.tabInstruction, "使用說明")
 
         # Master tab
         self.masterLayout = QVBoxLayout(self.tabMaster)
-        self.labelMasterIP = QLabel("服務器 IP: " + self.getIP())
+        self.labelMasterIP = QLabel("服務器 IP: ")
+        self.lineEditMasterIP = QLineEdit(self.getIP())
         self.btnMasterFile = QPushButton('選擇影片', self)
         self.btnMasterFile.clicked.connect(self.masterDialog)
         self.checkboxLoopMaster = QCheckBox("循環播放")
         self.masterLayout.addWidget(self.labelMasterIP)
+        self.masterLayout.addWidget(self.lineEditMasterIP)
         self.masterLayout.addWidget(self.btnMasterFile)
         self.masterLayout.addWidget(self.checkboxLoopMaster)
 
@@ -53,11 +58,35 @@ class MyApp(QWidget):
         self.slaveLayout.addWidget(self.btnSlavePlay)
         self.slaveLayout.addWidget(self.checkboxLoopSlave)
 
+        # Instruction tab
+        self.instructionLayout = QVBoxLayout(self.tabInstruction)
+        self.textBrowser = QTextBrowser()
+        self.textBrowser.setOpenExternalLinks(True)
+        self.textBrowser.setHtml("""
+使用方法：<br>
+1. 開啟程式後，將會看到三個分頁：Master、Slave 和 使用說明。<br>
+2. Master 分頁：<br>
+   - 會顯示當前主機的 IP 地址。
+   - 點擊 '選擇影片' 按鈕，選擇你要播放的影片檔案。
+   - '循環播放' 的核取方塊：選擇影片並點擊播放後，將無法更改循環播放的設定。<br>
+3. Slave 分頁：<br>
+   - 點擊 '服務器 IP' 按鈕，輸入 Master 主機的 IP 地址。
+   - 點擊 '選擇影片' 按鈕，選擇你要播放的影片檔案。
+   - '播放影片' 按鈕：與 Master 主機同步並開始播放影片。
+   - '循環播放' 的核取方塊：選擇影片並點擊播放後，將無法更改循環播放的設定。<br>
+影片播放控制鍵：<br>
+- 空白鍵：暫停/播放<br>
+- 方向鍵左/右：快進/倒帶<br>
+- F：全螢幕切換<br>
+<a href='https://github.com/Oliver0804/sync_player'>程式碼連結</a>
+        """)
+        self.instructionLayout.addWidget(self.textBrowser)
+
         vbox.addWidget(self.tabs)
         self.setLayout(vbox)
 
-        self.setWindowTitle('MPlayer Sync Controller')
-        self.setGeometry(300, 300, 300, 200)
+        self.setWindowTitle('口丁 MPlayer Sync Controller v1.0')
+        self.setGeometry(400, 300, 400, 200)
         self.show()
 
     def getIP(self):
@@ -68,7 +97,8 @@ class MyApp(QWidget):
         if fname[0]:
             loopCmd_1 = '-loop' if self.checkboxLoopMaster.isChecked() else ''
             loopCmd_2 = '0' if self.checkboxLoopMaster.isChecked() else ''
-            subprocess.Popen(['mplayer', '-udp-master', '-udp-ip', '192.168.0.255', str(fname[0]), loopCmd_1, loopCmd_2])
+            server_ip = self.lineEditMasterIP.text()
+            subprocess.Popen(['mplayer', '-udp-master', '-udp-ip', server_ip, str(fname[0]), loopCmd_1, loopCmd_2])
             self.checkboxLoopMaster.setEnabled(False)
 
     def slaveIPDialog(self):
@@ -87,6 +117,7 @@ class MyApp(QWidget):
             loopCmd_2 = '0' if self.checkboxLoopSlave.isChecked() else ''
             subprocess.Popen(['mplayer', '-udp-slave', '-udp-ip', self.slaveIP, self.slaveFile, loopCmd_1, loopCmd_2])
             self.checkboxLoopSlave.setEnabled(False)
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
