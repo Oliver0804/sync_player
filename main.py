@@ -93,7 +93,7 @@ class MyApp(QWidget):
         return getIP("enp7s0")
 
     def masterDialog(self):
-        fname = QFileDialog.getOpenFileName(self, '選擇影片', './')
+        fname = QFileDialog.getOpenFileName(self, '選擇影片', './videos')
         if fname[0]:
             loopCmd_1 = '-loop' if self.checkboxLoopMaster.isChecked() else ''
             loopCmd_2 = '0' if self.checkboxLoopMaster.isChecked() else ''
@@ -107,7 +107,7 @@ class MyApp(QWidget):
             self.slaveIP = str(text)
 
     def slaveFileDialog(self):
-        fname = QFileDialog.getOpenFileName(self, '選擇影片', './')
+        fname = QFileDialog.getOpenFileName(self, '選擇影片', './videos')
         if fname[0]:
             self.slaveFile = str(fname[0])
 
