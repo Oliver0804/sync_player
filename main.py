@@ -2,8 +2,9 @@ import sys
 import socket
 import subprocess
 from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QPushButton, QTabWidget,
-                             QInputDialog, QLineEdit, QFileDialog, QLabel)
+                             QInputDialog, QLineEdit, QFileDialog, QLabel, QCheckBox)
 import netifaces
+
 
 def getIP(interface):
     if interface in netifaces.interfaces():
@@ -11,8 +12,6 @@ def getIP(interface):
         return addrs[netifaces.AF_INET][0]['addr']
     else:
         return "Interface not found"
-
-print()  # 你可以更換 "eth0" 為你的目標網路介面名稱
 
 
 class MyApp(QWidget):
@@ -26,30 +25,33 @@ class MyApp(QWidget):
         self.tabs = QTabWidget()
         self.tabMaster = QWidget()
         self.tabSlave = QWidget()
-        self.tabs.resize(300, 200)
 
         self.tabs.addTab(self.tabMaster,"Master")
         self.tabs.addTab(self.tabSlave,"Slave")
 
-        self.masterLayout = QVBoxLayout()
+        # Master tab
+        self.masterLayout = QVBoxLayout(self.tabMaster)
         self.labelMasterIP = QLabel("服務器 IP: " + self.getIP())
         self.btnMasterFile = QPushButton('選擇影片', self)
         self.btnMasterFile.clicked.connect(self.masterDialog)
+        self.checkboxLoopMaster = QCheckBox("循環播放")
         self.masterLayout.addWidget(self.labelMasterIP)
         self.masterLayout.addWidget(self.btnMasterFile)
-        self.tabMaster.setLayout(self.masterLayout)
+        self.masterLayout.addWidget(self.checkboxLoopMaster)
 
-        self.slaveLayout = QVBoxLayout()
-        self.btnSlaveIP = QPushButton('服務器IP', self)
+        # Slave tab
+        self.slaveLayout = QVBoxLayout(self.tabSlave)
+        self.btnSlaveIP = QPushButton('服務器 IP', self)
         self.btnSlaveFile = QPushButton('選擇影片', self)
-        self.btnSlavePlay = QPushButton('Play Slave Video', self)
+        self.btnSlavePlay = QPushButton('播放影片', self)
+        self.checkboxLoopSlave = QCheckBox("循環播放")
         self.btnSlaveIP.clicked.connect(self.slaveIPDialog)
         self.btnSlaveFile.clicked.connect(self.slaveFileDialog)
         self.btnSlavePlay.clicked.connect(self.slavePlay)
         self.slaveLayout.addWidget(self.btnSlaveIP)
         self.slaveLayout.addWidget(self.btnSlaveFile)
         self.slaveLayout.addWidget(self.btnSlavePlay)
-        self.tabSlave.setLayout(self.slaveLayout)
+        self.slaveLayout.addWidget(self.checkboxLoopSlave)
 
         vbox.addWidget(self.tabs)
         self.setLayout(vbox)
@@ -59,17 +61,19 @@ class MyApp(QWidget):
         self.show()
 
     def getIP(self):
-        
         return getIP("enp7s0")
 
     def masterDialog(self):
         fname = QFileDialog.getOpenFileName(self, '選擇影片', './')
         if fname[0]:
-            subprocess.Popen(['mplayer', '-udp-master', '-udp-ip', '192.168.0.255', str(fname[0])])
+            loopCmd_1 = '-loop' if self.checkboxLoopMaster.isChecked() else ''
+            loopCmd_2 = '0' if self.checkboxLoopMaster.isChecked() else ''
+            subprocess.Popen(['mplayer', '-udp-master', '-udp-ip', '192.168.0.255', str(fname[0]), loopCmd_1, loopCmd_2])
+            self.checkboxLoopMaster.setEnabled(False)
 
     def slaveIPDialog(self):
         text, ok = QInputDialog.getText(self, '服務器 IP', 'Enter IP address:', QLineEdit.Normal)
-        if ok and text != '':
+        if ok and text != '127.0.0.1':
             self.slaveIP = str(text)
 
     def slaveFileDialog(self):
@@ -79,7 +83,10 @@ class MyApp(QWidget):
 
     def slavePlay(self):
         if hasattr(self, 'slaveIP') and hasattr(self, 'slaveFile'):
-            subprocess.Popen(['mplayer', '-udp-slave', '-udp-ip', self.slaveIP, self.slaveFile])
+            loopCmd_1 = '-loop' if self.checkboxLoopSlave.isChecked() else ''
+            loopCmd_2 = '0' if self.checkboxLoopSlave.isChecked() else ''
+            subprocess.Popen(['mplayer', '-udp-slave', '-udp-ip', self.slaveIP, self.slaveFile, loopCmd_1, loopCmd_2])
+            self.checkboxLoopSlave.setEnabled(False)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
