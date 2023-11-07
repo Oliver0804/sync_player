@@ -7,6 +7,9 @@ from PyQt5.QtCore import QUrl
 import netifaces
 
 
+from zeroconf import ServiceBrowser, Zeroconf, ServiceInfo
+
+
 
 def get_local_ip():
     for interface in netifaces.interfaces():
@@ -27,6 +30,13 @@ def getIP(interface):
     else:
         return "Interface not found"
 
+class MyListener:
+    def remove_service(self, zeroconf, type, name):
+        print(f"Service {name} removed")
+
+    def add_service(self, zeroconf, type, name):
+        info = zeroconf.get_service_info(type, name)
+        print(f"Service {name} added, service info: {info}")
 
 class MyApp(QWidget):
     def __init__(self):
@@ -52,10 +62,12 @@ class MyApp(QWidget):
         self.btnMasterFile = QPushButton('選擇影片', self)
         self.btnMasterFile.clicked.connect(self.masterDialog)
         self.checkboxLoopMaster = QCheckBox("循環播放")
+        self.checkboxMdns = QCheckBox("mDNS")
         self.masterLayout.addWidget(self.labelMasterIP)
         self.masterLayout.addWidget(self.lineEditMasterIP)
         self.masterLayout.addWidget(self.btnMasterFile)
         self.masterLayout.addWidget(self.checkboxLoopMaster)
+        self.masterLayout.addWidget(self.checkboxMdns)
 
         # Slave tab
         self.slaveLayout = QVBoxLayout(self.tabSlave)
@@ -104,6 +116,7 @@ class MyApp(QWidget):
         self.setWindowTitle('口丁 MPlayer Sync Controller v1.0')
         self.setGeometry(400, 300, 400, 200)
         self.show()
+    
 
     def getIP(self):
         #return getIP("enp7s0")
@@ -137,7 +150,36 @@ class MyApp(QWidget):
             loopCmd_2 = '0' if self.checkboxLoopSlave.isChecked() else ''
             subprocess.Popen(['mplayer', '-udp-slave', '-udp-ip', self.slaveIP, self.slaveFile, loopCmd_1, loopCmd_2])
             self.checkboxLoopSlave.setEnabled(False)
+            
+    def register_service(self):
+        local_ip = socket.inet_aton(get_local_ip())
+        service_name = "MyServiceName._http._tcp.local."
+        service_port = 8000  # 您应用的端口号
 
+        self.service_info = ServiceInfo(
+            "_http._tcp.local.",
+            service_name,
+            addresses=[local_ip],
+            port=service_port,
+            properties={},
+        )
+
+        self.zeroconf = Zeroconf()
+        self.zeroconf.register_service(self.service_info)
+
+    def unregister_service(self):
+        if hasattr(self, 'zeroconf'):
+            self.zeroconf.unregister_service(self.service_info)
+            self.zeroconf.close()
+
+    def start_service_discovery(self):
+        self.zeroconf = Zeroconf()
+        self.listener = MyListener()
+        self.browser = ServiceBrowser(self.zeroconf, "_http._tcp.local.", self.listener)
+    
+    def closeEvent(self, event):
+        self.unregister_service()
+        event.accept()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
