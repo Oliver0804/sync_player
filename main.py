@@ -7,6 +7,19 @@ from PyQt5.QtCore import QUrl
 import netifaces
 
 
+
+def get_local_ip():
+    for interface in netifaces.interfaces():
+        addrs = netifaces.ifaddresses(interface)
+        if netifaces.AF_INET in addrs:
+            for addr in addrs[netifaces.AF_INET]:
+                ip = addr['addr']
+                if ip.startswith("10.") or ip.startswith("192."):
+                    return ip
+    return "No appropriate local IP found."
+
+
+
 def getIP(interface):
     if interface in netifaces.interfaces():
         addrs = netifaces.ifaddresses(interface)
@@ -53,6 +66,9 @@ class MyApp(QWidget):
         self.btnSlaveIP.clicked.connect(self.slaveIPDialog)
         self.btnSlaveFile.clicked.connect(self.slaveFileDialog)
         self.btnSlavePlay.clicked.connect(self.slavePlay)
+        self.btnSlaveFile.setEnabled(False)  # 禁用選擇影片按鈕
+        self.btnSlavePlay.setEnabled(False)  # 禁用播放影片按鈕
+
         self.slaveLayout.addWidget(self.btnSlaveIP)
         self.slaveLayout.addWidget(self.btnSlaveFile)
         self.slaveLayout.addWidget(self.btnSlavePlay)
@@ -90,7 +106,8 @@ class MyApp(QWidget):
         self.show()
 
     def getIP(self):
-        return getIP("enp7s0")
+        #return getIP("enp7s0")
+        return get_local_ip()
 
     def masterDialog(self):
         fname = QFileDialog.getOpenFileName(self, '選擇影片', './videos')
@@ -104,11 +121,14 @@ class MyApp(QWidget):
     def slaveIPDialog(self):
         text, ok = QInputDialog.getText(self, '服務器 IP', 'Enter IP address:', QLineEdit.Normal)
         if ok and text != '127.0.0.1':
+            self.btnSlaveFile.setEnabled(True)  # 禁用選擇影片按鈕
             self.slaveIP = str(text)
 
     def slaveFileDialog(self):
         fname = QFileDialog.getOpenFileName(self, '選擇影片', './videos')
         if fname[0]:
+            self.btnSlavePlay.setEnabled(True)  # 禁用播放影片按鈕
+
             self.slaveFile = str(fname[0])
 
     def slavePlay(self):
@@ -122,4 +142,5 @@ class MyApp(QWidget):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = MyApp()
+    
     sys.exit(app.exec_())
