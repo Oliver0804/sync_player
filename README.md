@@ -10,7 +10,7 @@ sudo apt install mplayer
 ```
 
 
-2. 安裝pyqt5
+2. 安裝python所需的套件
 ```
 pip install - r requirements.txt
 ```
