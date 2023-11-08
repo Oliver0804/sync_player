@@ -44,6 +44,7 @@ git clone https://github.com/Oliver0804/sync_player
 
 3. 安裝python所需的套件
 ```
+cd sync_player
 pip install - r requirements.txt
 ```
 
