@@ -37,7 +37,12 @@
 sudo apt install mplayer
 ```
 
-2. 安裝python所需的套件
+2. Clone本項目
+```
+git clone https://github.com/Oliver0804/sync_player
+```
+
+3. 安裝python所需的套件
 ```
 pip install - r requirements.txt
 ```
